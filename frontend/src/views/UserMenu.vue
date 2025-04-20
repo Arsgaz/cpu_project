@@ -55,7 +55,7 @@
                 <td>{{ admin.name }}</td>
                 <td>{{ admin.Email }}</td>
                 <td>
-                  <button class="button is-info" @click="editUser(admin)">Edit</button>
+                  <button class="button is-info" @click="editAdmin(admin)">Edit</button>
                   <button class="button is-danger" @click="deleteUser(admin.id)">Delete</button>
                 </td>
               </tr>
@@ -127,18 +127,24 @@ async getAdmins() {
       editUser(user) {
         this.$router.push({ name: 'EditUser', params: { id: user.id } }); // Перенаправляем на страницу редактирования
       },
+      editAdmin(admin) {
+        this.$router.push({ name: 'EditAdmin', params: { id: admin.id } });
+      },
   
-      // Удаление пользователя
+      // Удаление пользователя или администратора
       async deleteUser(id) {
-        if (confirm('Are you sure you want to delete this user?')) {
+        const type = this.activeTab === 'users' ? 'user' : 'admin';
+        if (confirm(`Are you sure you want to delete this ${type}?`)) {
           try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/users/${id}`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+            const url = this.activeTab === 'users'
+              ? `http://localhost:3000/users/${id}`
+              : `http://localhost:3000/admins/${id}`;
+
+            await axios.delete(url, {
+              headers: { Authorization: `Bearer ${token}` }
             });
-            // Обновляем список пользователей после удаления
+
             if (this.activeTab === 'users') {
               this.getUsers();
             } else {
@@ -146,10 +152,10 @@ async getAdmins() {
             }
           } catch (err) {
             console.log(err.response ? err.response.data : err);
-            alert(err.response?.data?.message || 'Failed to delete user');
+            alert(err.response?.data?.message || `Failed to delete ${type}`);
           }
         }
-      },
+      }
     },
   };
   </script>

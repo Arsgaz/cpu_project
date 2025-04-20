@@ -11,6 +11,8 @@ import UserRegister from './views/UserRegister.vue'
 import UserLogin from './views/UserLogin.vue'
 import AdminRegister from './views/AdminRegister.vue'
 import UserMenu from './views/UserMenu.vue'
+import EditUser from './views/EditUser.vue'
+import EditAdmin from './views/EditAdmin.vue'
  
  
 const routes = [
@@ -57,7 +59,18 @@ const routes = [
         requiresAuth: true, 
         requiresAdmin: true,
       },
+  }, 
+  {
+    path: '/users/edit/:id',
+    name: 'EditUser',
+    component: EditUser
+  },
+  {
+    path: "/admins/edit/:id",
+    name: "EditAdmin",
+    component: EditAdmin
   }
+  
 ];
  
 const router = createRouter({
