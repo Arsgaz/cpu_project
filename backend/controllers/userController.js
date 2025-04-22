@@ -1,5 +1,5 @@
 // controllers/userController.js
-import { getAllUsers, getAllAdmins, getUserById, updateUser, deleteUser, getAdminById, updateAdmin, deleteAdmin } from "../models/userModel.js";
+import { getAllUsers, getAllAdmins, getUserById, updateUser, deleteUser, getAdminById, updateAdmin, deleteAdmin} from "../models/userModel.js";
 
 
 // Получить всех пользователей
@@ -12,6 +12,7 @@ export const fetchUsers = (req, res) => {
         }
     });
 }
+
 
 // Получить всех администраторов
 export const fetchAdmins = (req, res) => {

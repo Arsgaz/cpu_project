@@ -13,7 +13,11 @@ import AdminRegister from './views/AdminRegister.vue'
 import UserMenu from './views/UserMenu.vue'
 import EditUser from './views/EditUser.vue'
 import EditAdmin from './views/EditAdmin.vue'
- 
+import ShoppingCart from './views/ShoppingCart.vue'
+import ShoppingOrder from './views/ShoppingOrder.vue'
+import MyOrders from './views/MyOrders.vue'
+import ManageStock from './views/ManageStock.vue'
+import OrderDetail from './views/OrderDetail.vue'
  
 const routes = [
   {
@@ -69,8 +73,35 @@ const routes = [
     path: "/admins/edit/:id",
     name: "EditAdmin",
     component: EditAdmin
-  }
-  
+  },
+  {
+    path: "/cart",
+    name: "ShoppingCart",
+    component: ShoppingCart
+  },
+  {
+    path: "/order",
+    name: "ShoppingOrder",
+    component: ShoppingOrder
+  },
+  {
+    path: "/my-orders",
+    name: "MyOrders",
+    component: MyOrders,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/manage-stock/:id',
+    name: 'ManageStock',
+    component: ManageStock,
+    meta: { requiresAuth: true, role: 'Admin' || 'Manager' },
+  },
+  {
+    path: '/orders/:id',
+    name: "OrderDetail",
+    component: OrderDetail,
+    props: true
+  },
 ];
  
 const router = createRouter({

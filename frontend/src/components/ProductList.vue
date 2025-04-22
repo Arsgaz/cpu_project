@@ -8,13 +8,23 @@
         </div>
         <div class="level-right">
           <!-- Кнопка для добавления нового продукта только для администратора -->
-          <router-link v-if="isAdmin" :to="{ name: 'Create' }" class="button is-primary">
+          <router-link v-if="isAdmin" :to="{ name: 'Create' }" class="button is-primary ml-2">
             + Add New Product
           </router-link>
 
           <!-- Кнопка для управления пользователями только для администратора -->
           <router-link v-if="isAdmin" to="/user-management" class="button is-info ml-2">
             User Menu
+          </router-link>
+
+          <!-- Кнопка для перехода в корзину видна только для залогиненных пользователей -->
+          <router-link v-if="!isAdmin && isLoggedIn" to="/cart" class="button is-link ml-2">
+            🛒 Go to Cart
+          </router-link>
+
+          <!-- Кнопка для перехода на My Orders видна только для залогиненных клиентов -->
+          <router-link v-if="!isAdmin && isLoggedIn" to="/my-orders" class="button is-link ml-2">
+            📝 My Orders
           </router-link>
 
           <!-- Кнопка для регистрации администратора всегда видна, если не залогинен -->
@@ -57,20 +67,40 @@
             </div>
           </router-link>
 
-          <div class="card-buttons" v-if="isAdmin">
-            <router-link
-              :to="{ name: 'Edit', params: { id: item.ProductID } }"
-              class="button is-info is-fullwidth mb-2"
+          <footer class="card-footer">
+            <!-- Кнопка "Add to Cart" видна только не администраторам и только для залогиненных пользователей -->
+            <button 
+              v-if="!isAdmin && isLoggedIn"
+              class="button is-primary is-fullwidth m-2"
+              @click="addToCart(item)"
             >
-              Edit
-            </router-link>
-            <a
-              class="button is-danger is-fullwidth"
-              @click="deleteProduct(item.ProductID)"
-            >
-              Delete
-            </a>
-          </div>
+              🛒 Add to Cart
+            </button>
+
+            <div v-if="isAdmin" class="card-buttons">
+              <router-link
+                :to="{ name: 'Edit', params: { id: item.ProductID } }"
+                class="button is-info is-fullwidth mb-2"
+              >
+                Edit
+              </router-link>
+              <a
+                class="button is-danger is-fullwidth"
+                @click="deleteProduct(item.ProductID)"
+              >
+                Delete
+              </a>
+
+              <!-- Кнопка для управления складом, доступна только для администратора или менеджера -->
+              <router-link
+                v-if="isAdmin || isManager" 
+                :to="{ name: 'ManageStock', params: { id: item.ProductID } }"
+                class="button is-warning is-fullwidth mt-2"
+              >
+                Manage Stock
+              </router-link>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -84,11 +114,28 @@
   </section>
 </template>
 
+
 <script>
 import axios from "axios";
+import { inject } from 'vue';
 
 export default {
   name: "ProductListView",
+  setup() {
+    const cart = inject('cart');
+    const addToCart = inject('addToCart');
+
+    const addProductToCart = (product) => {
+      if (addToCart) {
+        addToCart(product);
+      }
+    };
+
+    return {
+      cart,
+      addProductToCart,
+    };
+  },
   data() {
     return {
       items: [],
@@ -115,6 +162,31 @@ export default {
         console.log(err.response ? err.response.data : err);
         alert(err.response?.data?.message || "Failed to load products");
       }
+    },
+    addToCart(product) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("You must be logged in to add items to the cart.");
+        return;
+      }
+
+      // Отправка запроса на сервер для добавления товара в корзину
+      axios.post("http://localhost:3000/cart/add", {
+        productId: product.ProductID,
+        quantity: 1
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then(() => {  // Убираем response, если он не нужен
+        alert("Product added to cart!");
+        this.$root.$emit('cart-updated');
+      })
+      .catch(err => {
+        console.log(err.response ? err.response.data : err);
+        alert("Failed to add product to cart");
+      });
     },
     async deleteProduct(id) {
       if (confirm("Are you sure you want to delete this product?")) {
@@ -145,7 +217,9 @@ export default {
             // Проверяем роль пользователя
             if (decodedToken.role === 'Admin') {
               this.isAdmin = true;
-            }
+            } else if (decodedToken.role === 'Manager') {
+          this.isManager = true;
+        }
           } else {
             console.error("Invalid token format");
           }
@@ -212,7 +286,20 @@ export default {
   background: transparent;
 }
 
+/* Коррекция отступов кнопок для правой части экрана */
+.level-right {
+  display: flex;
+  flex-wrap: wrap; /* Обеспечивает перенос кнопок */
+}
+
 .ml-2 {
   margin-left: 10px;
+}
+
+/* Улучшение выравнивания кнопок */
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 </style>

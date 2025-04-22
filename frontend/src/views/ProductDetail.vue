@@ -89,6 +89,9 @@
             <p class="card-footer-item" v-if="canEdit">
               <button class="button is-info is-small" @click="startEditing">Edit</button>
             </p>
+            <p class="card-footer-item" v-else>
+              <button class="button is-primary is-small" @click="addToCart">Add to Cart</button>
+            </p>
             <p class="card-footer-item">
               <router-link class="button is-light is-small" to="/">Back to Catalog</router-link>
             </p>
@@ -138,6 +141,25 @@ export default {
       console.log(err);
     }
   },
+  addToCart() {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const existingProduct = cart.find(item => item.id === this.$route.params.id);
+
+  if (existingProduct) {
+    existingProduct.quantity += 1;
+  } else {
+    cart.push({
+      id: this.$route.params.id,
+      name: this.productName,
+      price: this.productPrice,
+      image: this.productImage,
+      quantity: 1,
+    });
+  }
+
+  localStorage.setItem('cart', JSON.stringify(cart));
+  alert("Product added to cart!");
+},
 
   // Переводим страницу в режим редактирования
   startEditing() {

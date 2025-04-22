@@ -55,27 +55,30 @@ export default {
   },
   methods: {
     async login() {
-      this.errorMessage = ''; // Сбросить ошибку перед каждым запросом
-      try {
-        const response = await axios.post('http://localhost:3000/login', {
-          Email: this.form.Email,
-          Password: this.form.Password
-        });
+  this.errorMessage = ''; // Сброс ошибки перед новым запросом
+  try {
+    const response = await axios.post('http://localhost:3000/login', {
+      Email: this.form.Email,
+      Password: this.form.Password
+    });
 
-        const token = response.data.token;
+    const { token, userID, role } = response.data;
 
-        if (token) {
-          localStorage.setItem('token', token);
-          this.$router.push('/');  // Перенаправляем на главную страницу или другую нужную
-        } else {
-          this.errorMessage = 'Login failed: Token not received.';
-        }
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', userID);
+      localStorage.setItem('role', role);
 
-      } catch (err) {
-        console.error(err.response ? err.response.data : err);
-        this.errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
-      }
-    },
+      this.$router.push('/');  // Перенаправляем на главную или в профиль
+    } else {
+      this.errorMessage = 'Login failed: Token not received.';
+    }
+
+  } catch (err) {
+    console.error(err.response ? err.response.data : err);
+    this.errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
+  }
+},
 
     goToCatalog() {
       this.$router.push('/');  // Перенаправление на каталог (или на нужный путь)

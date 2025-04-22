@@ -12,7 +12,7 @@ export const getProducts = (result) => {
             console.log(err);
             result(err, null);
         } else {
-            result(null, results);  // Отправляем объединённые данные
+            result(null, results);  
         }
     });   
 }
@@ -104,6 +104,47 @@ export const deleteProductById = (id, result) => {
             result(err, null);
         } else {
             result(null, results);
+        }
+    });   
+}
+
+// Функция для обновления количества товара на складе
+export const updateStockQuantity = (productId, warehouseId, quantity, result) => {
+    const updateStockQuery = `
+      UPDATE Stock
+      SET StockQuantity = ?
+      WHERE ProductID = ? AND WarehouseID = ?
+    `;
+    
+    db.query(updateStockQuery, [quantity, productId, warehouseId], (err, res) => {
+      if (err) {
+        console.log("Error updating stock quantity:", err);
+        return result(err, null);
+      }
+    
+      if (res.affectedRows === 0) {
+        return result({ message: "No stock record found for the given product and warehouse" }, null);
+      }
+  
+      result(null, { message: 'Stock quantity updated successfully' });
+    });
+  };
+
+  // Получить продукт с количеством на складе
+export const getProductWithStockById = (id, result) => {
+    const query = `
+        SELECT p.ProductID, p.Name, p.Brand, p.CoreCount, p.ClockSpeed, p.Description, p.ImageURL, pp.Price, s.StockQuantity
+        FROM products p
+        LEFT JOIN productprices pp ON p.ProductID = pp.ProductID
+        LEFT JOIN stock s ON p.ProductID = s.ProductID AND s.WarehouseID = 1
+        WHERE p.ProductID = ?
+    `;
+    db.query(query, [id], (err, results) => {             
+        if(err) {
+            console.log(err);
+            result(err, null);
+        } else {
+            result(null, results[0]); // возвращает один товар с количеством на складе
         }
     });   
 }

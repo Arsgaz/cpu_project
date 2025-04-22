@@ -3,6 +3,7 @@
     <div class="container">
       <h1 class="title">Register</h1>
       <div class="box">
+        <!-- Форма регистрации -->
         <div class="field">
           <label class="label">Full Name</label>
           <div class="control">
@@ -31,16 +32,47 @@
           </div>
         </div>
 
+        <!-- Адрес пользователя -->
+        <h3 class="title is-5 mt-4">Address</h3>
+
         <div class="field">
+          <label class="label">Country</label>
           <div class="control">
-            <button class="button is-primary" @click="register">Register</button>
+            <input class="input" type="text" v-model="form.Address.Country" placeholder="Country">
           </div>
         </div>
 
-        <!-- Кнопка Back to catalog -->
+        <div class="field">
+          <label class="label">Region</label>
+          <div class="control">
+            <input class="input" type="text" v-model="form.Address.Region" placeholder="Region">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">City</label>
+          <div class="control">
+            <input class="input" type="text" v-model="form.Address.City" placeholder="City">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Street</label>
+          <div class="control">
+            <input class="input" type="text" v-model="form.Address.Street" placeholder="Street">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Postal Code</label>
+          <div class="control">
+            <input class="input" type="text" v-model="form.Address.PostalCode" placeholder="Postal Code">
+          </div>
+        </div>
+
         <div class="field">
           <div class="control">
-            <button class="button is-link" @click="goToCatalog">Back to catalog</button>
+            <button class="button is-primary" @click="register">Register</button>
           </div>
         </div>
 
@@ -69,7 +101,14 @@ export default {
         FullName: '',
         Email: '',
         Phone: '',
-        Password: ''
+        Password: '',
+        Address: {
+          Country: '',
+          Region: '',
+          City: '',
+          Street: '',
+          PostalCode: ''
+        }
       },
       errorMessage: '', // Хранение сообщения об ошибке
       successMessage: '' // Хранение сообщения об успешной регистрации
@@ -82,7 +121,7 @@ export default {
       this.successMessage = '';
 
       // Проверка на пустые поля
-      if (!this.form.FullName || !this.form.Email || !this.form.Phone || !this.form.Password) {
+      if (!this.form.FullName || !this.form.Email || !this.form.Phone || !this.form.Password || !this.form.Address.Country || !this.form.Address.City || !this.form.Address.Street) {
         this.errorMessage = 'Please fill in all fields.';
         return;
       }
@@ -97,10 +136,6 @@ export default {
         console.error(err.response ? err.response.data : err);
         this.errorMessage = err.response?.data?.message || 'Registration failed. Please check your input.';
       }
-    },
-
-    goToCatalog() {
-      this.$router.push('/');  // Перенаправляем на каталог (или на нужную страницу)
     }
   }
 }
