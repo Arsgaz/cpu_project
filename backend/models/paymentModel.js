@@ -1,13 +1,13 @@
 import db from "../config/database.js";
 
-// Функция для создания записи об оплате
-export const createPayment = (orderId, paymentMethod, result) => {
-  const paymentDate = new Date().toISOString().slice(0, 19).replace('T', ' '); // Текущая дата и время
+export const createPayment = (orderId, paymentDate, result) => {
+  console.log("Creating payment for OrderID:", orderId);  // Логируем перед запросом
+
   const insertPaymentQuery = `
-    INSERT INTO payments (OrderID, PaymentDate, PaymentStatus, PaymentMethod)
-    VALUES (?, ?, 'pending', ?)
+    INSERT INTO payments (OrderID, PaymentDate, PaymentStatus)
+    VALUES (?, ?, 'completed')
   `;
-  db.query(insertPaymentQuery, [orderId, paymentDate, paymentMethod], (err, res) => {
+  db.query(insertPaymentQuery, [orderId, paymentDate], (err, res) => {
     if (err) {
       console.log("Error creating payment record:", err);
       return result(err, null);
@@ -18,18 +18,14 @@ export const createPayment = (orderId, paymentMethod, result) => {
   });
 };
 
-// Функция для обновления статуса оплаты на "completed"
-export const updatePaymentStatus = (paymentId, result) => {
-    const updatePaymentStatusQuery = `
-      UPDATE payments SET PaymentStatus = 'completed' WHERE PaymentID = ?
-    `;
-    db.query(updatePaymentStatusQuery, [paymentId], (err, res) => {
-      if (err) {
-        console.log("Error updating payment status:", err);
-        return result(err, null);
-      }
-  
-      console.log("Payment status updated to 'completed'");
-      result(null, { message: 'Payment status updated to completed' });
-    });
-  };
+export const updateOrderStatus = (orderId, status, paymentMethod, callback) => {
+  const query = `UPDATE Orders SET status = ?, paymentMethod = ? WHERE orderId = ?`;
+  const values = [status, paymentMethod, orderId];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      return callback(err, null);
+    }
+    callback(null, result);
+  });
+};

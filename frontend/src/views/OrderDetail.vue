@@ -46,10 +46,12 @@
 
         <hr />
 
-        <div v-if="paymentStatus === 'completed'">
+        <!-- Проверка статуса заказа -->
+        <div v-if="orderStatus === 'Paid'">
           <p class="has-text-success is-size-5">Payment Completed. Thank you!</p>
         </div>
         <div v-else>
+          <!-- Этот блок показывается, если оплата ещё не завершена -->
           <h3 class="subtitle">Payment Method</h3>
           <div class="field">
             <label class="label">Select Payment Method</label>
@@ -91,6 +93,7 @@ export default {
       selectedPaymentMethod: "",
       paymentStatus: "", // статус платежа
       isProcessing: false,
+      orderStatus: "", // статус заказа
     };
   },
   computed: {
@@ -102,10 +105,10 @@ export default {
     },
   },
   created() {
-    this.fetchOrderProducts();
+    this.fetchOrderDetails();
   },
   methods: {
-    async fetchOrderProducts() {
+    async fetchOrderDetails() {
       const token = localStorage.getItem("token");
       const orderID = this.$route.params.id;
 
@@ -121,10 +124,12 @@ export default {
             Authorization: `Bearer ${token}`,
           },
         });
-        this.products = Array.isArray(response.data) ? response.data : [];
-        this.paymentStatus = response.data.paymentStatus;
+        
+        // Обработка данных ответа
+        this.products = Array.isArray(response.data.products) ? response.data.products : [];
+        this.orderStatus = response.data.orderStatus;  // Статус заказа из ответа
       } catch (err) {
-        console.error("Error fetching order products:", err);
+        console.error("Error fetching order details:", err);
         this.error = "Could not load order details.";
       } finally {
         this.loading = false;
@@ -139,11 +144,19 @@ export default {
         return;
       }
 
+      if (!orderID) {
+        this.error = "Order ID is required.";
+        return;
+      }
+
       try {
         this.isProcessing = true;
         await axios.post(
           `http://localhost:3000/orders/pay/${orderID}`,
-          { paymentMethod: this.selectedPaymentMethod },
+          {
+            orderId: orderID,  // Передаем orderId
+            paymentMethod: this.selectedPaymentMethod,  // Передаем метод оплаты
+          },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -151,7 +164,7 @@ export default {
           }
         );
         alert("Payment processed successfully.");
-        this.paymentStatus = "completed";
+        this.orderStatus = "Paid";  // Обновляем статус заказа
       } catch (err) {
         console.error("Error processing payment:", err);
         this.error = "Payment failed.";

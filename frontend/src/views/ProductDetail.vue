@@ -3,71 +3,10 @@
     <div class="container">
       <h1 class="title">Product Details</h1>
 
-      <!-- Если в режиме редактирования, показываем форму редактирования -->
       <div v-if="isEditing">
-        <div class="box">
-          <h2 class="subtitle">Edit Product</h2>
-          <div class="field">
-            <label class="label">Product Name</label>
-            <div class="control">
-              <input class="input" type="text" v-model="productName" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Price</label>
-            <div class="control">
-              <input class="input" type="number" v-model="productPrice" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Description</label>
-            <div class="control">
-              <textarea class="textarea" v-model="productDescription"></textarea>
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Image URL</label>
-            <div class="control">
-              <input class="input" type="text" v-model="productImage" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Brand</label>
-            <div class="control">
-              <input class="input" type="text" v-model="productBrand" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Core Count</label>
-            <div class="control">
-              <input class="input" type="number" v-model="productCoreCount" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Clock Speed</label>
-            <div class="control">
-              <input class="input" type="number" v-model="productClockSpeed" />
-            </div>
-          </div>
-
-          <div class="field is-grouped is-grouped-right">
-            <p class="control">
-              <button class="button is-info" @click="updateProduct">Save Changes</button>
-            </p>
-            <p class="control">
-              <button class="button is-light" @click="cancelEdit">Cancel</button>
-            </p>
-          </div>
-        </div>
+        <!-- Форма редактирования -->
       </div>
 
-      <!-- Если не в режиме редактирования, показываем просто данные продукта -->
       <div v-else>
         <div class="card">
           <div class="card-image">
@@ -83,6 +22,7 @@
               <p><strong>Brand:</strong> {{ productBrand }}</p>
               <p><strong>Core Count:</strong> {{ productCoreCount }}</p>
               <p><strong>Clock Speed:</strong> {{ productClockSpeed }} GHz</p>
+              <p><strong>Stock Quantity:</strong> {{ productStockQuantity }} units</p> <!-- Количество на складе -->
             </div>
           </div>
           <footer class="card-footer">
@@ -90,7 +30,13 @@
               <button class="button is-info is-small" @click="startEditing">Edit</button>
             </p>
             <p class="card-footer-item" v-else>
-              <button class="button is-primary is-small" @click="addToCart">Add to Cart</button>
+              <button 
+                v-if="!isAdmin && isLoggedIn" 
+                class="button is-primary is-small" 
+                @click="addProductToCart"
+              >
+                Add to Cart
+              </button>
             </p>
             <p class="card-footer-item">
               <router-link class="button is-light is-small" to="/">Back to Catalog</router-link>
@@ -103,127 +49,162 @@
 </template>
 
 <script>
-import axios from "axios";
+import { ref, onMounted, inject } from 'vue';
+import axios from 'axios';
+import { useRoute } from 'vue-router'; // для получения параметров маршрута
 
 export default {
   name: "ProductDetail",
-  data() {
-    return {
-      isEditing: false, // Переменная для отслеживания режима редактирования
-      productName: "",
-      productPrice: "",
-      productDescription: "",
-      productImage: "",
-      productBrand: "",
-      productCoreCount: "",
-      productClockSpeed: "",
-      canEdit: false, // Флаг для проверки, может ли пользователь редактировать
-    };
-  },
-  created() {
-    this.getProductById();
-    this.checkUserRole(); // Проверка роли пользователя
-  },
-  methods: {
-  // Загрузка данных о продукте
-  async getProductById() {
-    try {
-      const response = await axios.get(`http://localhost:3000/products/${this.$route.params.id}`);
-      const product = response.data;
-      this.productName = product.Name;
-      this.productPrice = product.Price;
-      this.productDescription = product.Description;
-      this.productImage = product.ImageURL;
-      this.productBrand = product.Brand;
-      this.productCoreCount = product.CoreCount;
-      this.productClockSpeed = product.ClockSpeed;
-    } catch (err) {
-      console.log(err);
-    }
-  },
-  addToCart() {
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
-  const existingProduct = cart.find(item => item.id === this.$route.params.id);
+  setup() {
+    const route = useRoute(); // доступ к параметрам маршрута
+    const addToCart = inject('addToCart'); // Получаем функцию добавления в корзину
 
-  if (existingProduct) {
-    existingProduct.quantity += 1;
-  } else {
-    cart.push({
-      id: this.$route.params.id,
-      name: this.productName,
-      price: this.productPrice,
-      image: this.productImage,
-      quantity: 1,
-    });
-  }
+    // Реактивные данные
+    const isEditing = ref(false);
+    const productName = ref("");
+    const productPrice = ref("");
+    const productDescription = ref("");
+    const productImage = ref("");
+    const productBrand = ref("");
+    const productCoreCount = ref("");
+    const productClockSpeed = ref("");
+    const productStockQuantity = ref(0); // Количество на складе
+    const canEdit = ref(false);
 
-  localStorage.setItem('cart', JSON.stringify(cart));
-  alert("Product added to cart!");
-},
-
-  // Переводим страницу в режим редактирования
-  startEditing() {
-    this.isEditing = true;
-  },
-
-  // Отменить редактирование
-  cancelEdit() {
-    this.isEditing = false;
-    this.getProductById(); // Перезагружаем данные, чтобы отменить изменения
-  },
-
-  // Обновление продукта
-  async updateProduct() {
-    const token = localStorage.getItem("token"); // Получаем токен из localStorage
-
-    if (!token) {
-      console.log("No token found");
-      return;
-    }
-
-    try {
-      // Отправка запроса с токеном в заголовке
-      await axios.put(`http://localhost:3000/products/${this.$route.params.id}`, {
-        Name: this.productName,
-        Price: this.productPrice,
-        Description: this.productDescription,
-        ImageURL: this.productImage,
-        Brand: this.productBrand,
-        CoreCount: this.productCoreCount,
-        ClockSpeed: this.productClockSpeed,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}` // Передаем токен в заголовке
-        }
-      });
-      this.isEditing = false; // Выход из режима редактирования
-    } catch (err) {
-      console.log("Error updating product:", err);
-    }
-  },
-
-  // Проверка роли пользователя
-  checkUserRole() {
-    const token = localStorage.getItem("token");
-
-    if (token) {
+    // Загрузка данных о продукте с количеством на складе
+    const getProductWithStockById = async () => {
       try {
-        // Проверяем, состоит ли токен из 3 частей
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const decodedToken = JSON.parse(atob(parts[1]));
-          console.log("Decoded Token:", decodedToken);
-          // Проверяем роль пользователя
-          if (decodedToken.role === 'Admin' || decodedToken.role === 'Manager') {
-            this.canEdit = true; // Разрешаем редактировать, если пользователь Admin или Manager
-          }
-        }
+        const response = await axios.get(`http://localhost:3000/products-with-stock/${route.params.id}`);
+        const product = response.data;
+        productName.value = product.Name;
+        productPrice.value = product.Price;
+        productDescription.value = product.Description;
+        productImage.value = product.ImageURL;
+        productBrand.value = product.Brand;
+        productCoreCount.value = product.CoreCount;
+        productClockSpeed.value = product.ClockSpeed;
+        productStockQuantity.value = product.StockQuantity || 0; // Заполняем количество на складе
       } catch (err) {
-        console.error("Error decoding token", err);
+        console.log(err);
       }
-    }
-  },
-},
+    };
+
+    // Добавление товара в корзину
+    const addProductToCart = async () => {
+      const product = {
+        id: route.params.id,
+        name: productName.value,
+        price: productPrice.value,
+        image: productImage.value,
+      };
+      if (addToCart) {
+        addToCart(product);
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("You must be logged in to add items to the cart.");
+        return;
+      }
+
+      try {
+        await axios.post("http://localhost:3000/cart/add", {
+          productId: route.params.id,
+          quantity: 1
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        alert("Product added to cart!");
+      } catch (err) {
+        console.log(err);
+        alert("Failed to add product to cart.");
+      }
+    };
+
+    // Проверка роли пользователя
+    const checkUserRole = () => {
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const decodedToken = JSON.parse(atob(parts[1]));
+            if (decodedToken.role === 'Admin' || decodedToken.role === 'Manager') {
+              canEdit.value = true;
+            }
+          }
+        } catch (err) {
+          console.error("Error decoding token", err);
+        }
+      }
+    };
+
+    // Переводим страницу в режим редактирования
+    const startEditing = () => {
+      isEditing.value = true;
+    };
+
+    // Отменить редактирование
+    const cancelEdit = () => {
+      isEditing.value = false;
+      getProductWithStockById(); // Перезагружаем данные, чтобы отменить изменения
+    };
+
+    // Обновление продукта
+    const updateProduct = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.log("No token found");
+        return;
+      }
+
+      try {
+        await axios.put(`http://localhost:3000/products-with-stock/${route.params.id}`, {
+          Name: productName.value,
+          Price: productPrice.value,
+          Description: productDescription.value,
+          ImageURL: productImage.value,
+          Brand: productBrand.value,
+          CoreCount: productCoreCount.value,
+          ClockSpeed: productClockSpeed.value,
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        isEditing.value = false;
+      } catch (err) {
+        console.log("Error updating product:", err);
+      }
+    };
+
+    // При монтировании
+    onMounted(() => {
+      getProductWithStockById();
+      checkUserRole();
+    });
+
+    return {
+      isEditing,
+      productName,
+      productPrice,
+      productDescription,
+      productImage,
+      productBrand,
+      productCoreCount,
+      productClockSpeed,
+      productStockQuantity, // Возвращаем количество на складе
+      canEdit,
+      addProductToCart,
+      startEditing,
+      cancelEdit,
+      updateProduct,
+    };
+  }
 };
 </script>
 
@@ -294,3 +275,4 @@ button.is-light {
   margin-left: 10px;
 }
 </style>
+

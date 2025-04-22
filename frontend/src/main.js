@@ -18,6 +18,7 @@ import ShoppingOrder from './views/ShoppingOrder.vue'
 import MyOrders from './views/MyOrders.vue'
 import ManageStock from './views/ManageStock.vue'
 import OrderDetail from './views/OrderDetail.vue'
+import EditOrder from './views/EditOrder.vue'
  
 const routes = [
   {
@@ -102,6 +103,12 @@ const routes = [
     component: OrderDetail,
     props: true
   },
+  {
+    path: '/orders/edit/:id',
+    name: 'EditOrder',
+    component: EditOrder,
+    meta: { requiresAuth: true }
+  }
 ];
  
 const router = createRouter({

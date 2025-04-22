@@ -6,7 +6,7 @@ import {
     fetchAdminById, updateAdminById, deleteAdminById
 } from "../controllers/userController.js";
 import { getCart, addProductToCart, removeProductFromCart, checkout } from "../controllers/cartController.js";
-import { confirmOrder, getMyOrders, getOrderDetails } from "../controllers/orderController.js"  // Подключаем контроллер подтверждения заказа
+import { confirmOrder, getMyOrders, getOrderDetails, processPayment, getAllOrders, updateOrderStatusAndDateController } from "../controllers/orderController.js"  // Подключаем контроллер подтверждения заказа
 import { verifyToken, verifyAdmin } from "../middleware/authMiddleware.js";  // Подключаем middleware
 
 
@@ -63,8 +63,10 @@ router.post("/checkout", verifyToken, checkout);
 router.post("/confirm-order", verifyToken, confirmOrder);
 router.get("/orders/my", verifyToken, getMyOrders);
 router.get("/orders/:id", verifyToken, getOrderDetails);
+router.get("/all-orders/", verifyToken, getAllOrders);
+router.put("/orders/:id/status-and-date", verifyToken, verifyAdmin, updateOrderStatusAndDateController);
 
-
+router.post("/orders/pay/:id", verifyToken, processPayment)
 
 
 export default router;
